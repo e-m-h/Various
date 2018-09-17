@@ -32,6 +32,14 @@ innoextractCheck() {
 #					fi
 				;;
 			Linux)
+				case $(lsb_release --id | awk '{ print $3 }') in
+					Fedora)
+						sudo yum install innoextract
+					;;
+					Ubuntu|Debian)
+						sudo apt install innoextract
+					;;
+				esac
 #				More please
 				;;		
 		esac
@@ -44,22 +52,20 @@ extractFiles() {
 }
 
 removeFiles() {
-	printf "Removing extraneous files from %s/ \(commonappdata and DOSBox/GOG files\). Continue?\n" ${EXDIR}; read -r YN
-		case ${YN} in
-			Y|y|"")
-				rm -rfv ${EXDIR}/commonappdata;
-				find ${EXDIR} -iname "*dosbox*"
-				;;
-			N|n)
-				printf "Exiting.\n"
-				exit 1
-				;;
-		esac
+	printf "Removing extraneous files from %s/ \(commonappdata and DOSBox/GOG files\).\n" ${EXDIR};
+	rm -rfv ${EXDIR}/commonappdata;
+	find ${EXDIR} -iname "*goggame*" -exec rm -vf {} \;
+	if [[ -d ${EXDIR}/app/DOSBOX/ ]]; then
+		rm -rvf ${EXDIR}/app/DOSBOX/;
+		rm -vf ${EXDIR}/app/webcache.zip;
+		rm -vf ${EXDIR}/app/GameuxInstallHelper.dll;
+	fi
+	mv ${EXDIR}/app "$(innoextract --gog-game-id ${GAMEARCHIVE} | cut -d '"' -f2 | head -n1)"
 }
 
-innoextractCheck
+#innoextractCheck
 extractFiles 
 removeFiles
 
 #	rm -rf commonappdata
-printf "After function\n"
+# sed 's/^"\(.*\)".*/\1/'
